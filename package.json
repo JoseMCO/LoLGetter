@@ -1,0 +1,14 @@
+{
+  "name": "lolgetter",
+  "version": "1.0.0",
+  "description": "Obtains League of Legends data ",
+  "main": "index.js",
+  "author": "JoseMCO",
+  "license": "MIT",
+  "dependencies": {
+    "kayn": "^0.4.2",
+    "lodash": "^4.17.4",
+    "lowdb": "^1.0.0",
+    "prettyjson": "^1.2.1"
+  }
+}
