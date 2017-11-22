@@ -6,6 +6,7 @@
   "author": "JoseMCO",
   "license": "MIT",
   "dependencies": {
+    "jsonexport": "^2.0.11",
     "kayn": "^0.4.2",
     "lodash": "^4.17.4",
     "lowdb": "^1.0.0",
