@@ -1,8 +1,4 @@
 const _ = require('lodash');
-const low = require('lowdb');
-const FileSync = require('lowdb/adapters/FileSync');
-const adapter = new FileSync('./data/db.json');
-const db = low(adapter);
 
 const {
   Kayn,
@@ -18,9 +14,11 @@ const {
   addMatches,
   updateMatch,
   fetchSummonerMatches,
+  fetchAllSummonersMatches,
   fetchFullMatch,
   fetchAllMatches,
-  exportMatches
+  exportMatchesPartial,
+  exportMatchesCsv
 } = require('./utils');
 
 const kayn = Kayn()({
@@ -41,10 +39,6 @@ const kayn = Kayn()({
   },
 });
 
-// Set some defaults
-db.defaults({ summoner: [], match: [] })
-  .write()
-
 // Judaaz -> id: 197393
 
 // kayn.Summoner.by
@@ -55,5 +49,7 @@ db.defaults({ summoner: [], match: [] })
 //   .catch(err => console.error(err));
 
 // _.each(db.get('summoner').value(), (sum)=>(fetchSummonerMatches(sum)) );
-// fetchAllMatches(kayn, db);
-exportMatches(db);
+// fetchAllSummonersMatches(kayn, 9);
+fetchAllMatches(kayn);
+// exportMatchesPartial();
+// exportMatchesCsv();

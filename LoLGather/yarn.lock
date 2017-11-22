@@ -240,6 +240,10 @@ jsbn@~0.1.0:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/jsbn/-/jsbn-0.1.1.tgz#a5e654c2e5a2deb5f201d96cefbca80c0ef2f513"
 
+json-concat@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/json-concat/-/json-concat-0.0.1.tgz#4f6303c9cac94eba30bbff91d13abea0118c97e2"
+
 json-schema-traverse@^0.3.0:
   version "0.3.1"
   resolved "https://registry.yarnpkg.com/json-schema-traverse/-/json-schema-traverse-0.3.1.tgz#349a6d44c53a51de89b40805c5d5e59b417d3340"
