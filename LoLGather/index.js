@@ -50,6 +50,6 @@ const kayn = Kayn()({
 
 // _.each(db.get('summoner').value(), (sum)=>(fetchSummonerMatches(sum)) );
 // fetchAllSummonersMatches(kayn, 9);
-fetchAllMatches(kayn);
+// fetchAllMatches(kayn);
 // exportMatchesPartial();
-// exportMatchesCsv();
+exportMatchesCsv();

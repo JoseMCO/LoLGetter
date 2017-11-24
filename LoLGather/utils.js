@@ -10,6 +10,10 @@ const sumAdapter = new FileSync('./data/sumDB.json');
 const matchAdapter = new FileSync('./data/matchDB.json');
 const db = { sum: low(sumAdapter), match: low(matchAdapter)};
 
+const LANES = ['','JUNGLE', 'TOP', 'MIDDLE', 'BOTTOM'];
+const LEAGUES = ['','UNRANKED', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND'];
+const GAME_LANES = ['BOTTOM100', 'BOTTOM100', 'BOTTOM200', 'BOTTOM200', 'JUNGLE100', 'JUNGLE200', 'MIDDLE100', 'MIDDLE200', 'TOP100', 'TOP200'];
+
 // Set some defaults
 db.sum.defaults({ summoner: [] }).write()
 db.match.defaults({ match: [] }).write()
@@ -55,14 +59,20 @@ const updateMatch = (match) => {
   if (isMatch.value()) {
     console.log('Removing old match!');
     db.match.get('match').remove({gameId: match.gameId}).write();
-    if (match.gameDuration >= 16*60) {
+    var roles = _.map(match.participants, (p)=>{ return p.timeline.lane+p.teamId }).sort();
+    if(!_.isEqual(roles, GAME_LANES)){
       db.match.get('match')
-        .push(match)
+        .push({gameId: match.gameId, full: true, comment: 'invalid lanes'})
+        .write();
+    }
+    else if (match.gameDuration < 16*60) {
+      db.match.get('match')
+        .push({gameId: match.gameId, full: true, comment: 'too short'})
         .write();
     }
     else {
       db.match.get('match')
-        .push({gameId: match.gameId, full: true, comment: 'too short'})
+        .push(match)
         .write();
     }
   }
@@ -157,43 +167,63 @@ const exportMatchesPartial = () => {
 
 const exportMatchesCsv = () => {
   console.log("Merging match files...");
-  jsonConcat({
-    src: "./data/partials/",
-    dest: "./data/matches_merged.json"
-  }, function (err, matches) {
-    if (err) return console.log(err);
-    console.log("Formating matches...");
-    function filterPlayers(plyrs, team) {
-      const leagues = ['','UNRANKED', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND'];
-      const lanes = ['','JUNGLE', 'TOP', 'MIDDLE', 'BOTTOM'];
-      plyrs = _.filter(plyrs, (p)=>{return p.teamId == team.teamId});
-      return _.map(plyrs, (p)=>{
-        return [
-          p.championId, 
-          leagues.indexOf(p.highestAchievedSeasonTier),
-          lanes.indexOf(p.timeline.lane)
-        ]
-      });
-    };
-    matches = _.map(matches, (m)=>{
-      var plyrsA = filterPlayers(m.participants, m.teams[0]);
-      var plyrsB = filterPlayers(m.participants, m.teams[1]);
+  const dir = './data/partials/';
+  var matches = [];
+  fs.readdirSync(dir).forEach((file) => {
+    if (file.endsWith(".json")) {
+      console.log(file);
+      matches = matches.concat(JSON.parse(fs.readFileSync(dir+file, 'utf8')));
+    }
+  });
+  matches = _.filter(matches, (m)=>{
+    var roles = _.map(m.participants, (p)=>{ return p.timeline.lane+p.teamId }).sort();
+    return _.isEqual(roles, GAME_LANES)
+  });
+  console.log(matches.length+" matches found");
+  console.log("Formating matches...");
+  function filterPlayers(plyrs, team, m) {
+    var second = false;
+    plyrs = _.filter(plyrs, (p)=>{return p.teamId == team.teamId});
+    return _.map(plyrs, (p)=>{
+      var key = team.teamId+'_'+p.timeline.lane+'_';
+      if(p.timeline.lane == 'BOTTOM' && !second){
+        key = key+'2_';
+        second = true;
+      }
       return {
-        queueId: m.queueId,
-        seasonId: m.seasonId,
-        gameVersion: m.gameVersion,
-        teamA: plyrsA,
-        teamB: plyrsB,
-        win: (m.teams[0].win == "Win" ? 'A' : 'B')
+        [key+'champ']: p.championId, 
+        [key+'rank']: LEAGUES.indexOf(p.highestAchievedSeasonTier),
       }
     });
-    console.log("Writing csv...");
-    jsonexport(matches,function(err, csv){
-      if(err) return console.log(err);
-      fs.writeFile('./data/matches.csv', csv, (err) => {  
-        if (err) return console.log(err);
-        console.log('csv saved!');
-      });
+  };
+  matches = _.map(matches, (m)=>{
+    var plyrsA = filterPlayers(m.participants, m.teams[0],m);
+    var plyrsB = filterPlayers(m.participants, m.teams[1],m);
+    return {
+      gameId: m.gameId,
+      queueId: m.queueId,
+      seasonId: m.seasonId,
+      gameVersion: m.gameVersion,
+      gameDuration: m.gameDuration,
+      ...plyrsA[0],
+      ...plyrsA[1],
+      ...plyrsA[2],
+      ...plyrsA[3],
+      ...plyrsA[4],
+      ...plyrsB[0],
+      ...plyrsB[1],
+      ...plyrsB[2],
+      ...plyrsB[3],
+      ...plyrsB[4],
+      win: (m.teams[0].win == "Win" ? 1 : 0)
+    }
+  });
+  console.log("Writing csv...");
+  jsonexport(matches,function(err, csv){
+    if(err) return console.log(err);
+    fs.writeFile('./data/matches.csv', csv, (err) => {  
+      if (err) return console.log(err);
+      console.log('csv saved!');
     });
   });
 };
@@ -210,4 +240,4 @@ module.exports = {
   fetchAllMatches,
   exportMatchesPartial,
   exportMatchesCsv
-}
+};
